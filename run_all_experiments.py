@@ -9,6 +9,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 
 from mw_pinn.config import TrainingConfig
 from mw_pinn.models.mwpinn import run_mwpinn_full_pipeline
+from mw_pinn.save_plots import save_solution_plot
 from mw_pinn.problems.heat_conduction import HeatConductionProblem
 from mw_pinn.problems.lid_driven import LidDrivenProblem
 from mw_pinn.problems.maxwell_heterogeneous import MaxwellProblem
@@ -72,6 +73,11 @@ def main():
             
             print(f"\n[SUCCESS] {name} completed in {exec_time_min:.2f} mins.")
             print(f"[METRICS] {metric_str}")
+
+            # Generate and save visual plot
+            plots_dir = os.path.join(os.path.dirname(__file__), 'Plots')
+            print(f"Generating visual plots...")
+            save_solution_plot(name, results, plots_dir)
             
         except Exception as e:
             print(f"\n[FAILED] {name} encountered an error: {e}")

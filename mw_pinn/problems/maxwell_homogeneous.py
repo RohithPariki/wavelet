@@ -93,6 +93,15 @@ class MaxwellHomogeneousProblem(BaseProblem):
         self.t_val = torch.rand(self.n_val)
         self.E_val, self.H_val = self.analytical_solution(self.x_val, self.t_val)
 
+        # Test grid
+        x_lin = torch.linspace(self.x_lower, self.x_upper, self.n_test)
+        t_lin = torch.linspace(self.t_lower, self.t_upper, self.n_test)
+        xg, tg = torch.meshgrid(x_lin, t_lin, indexing='ij')
+        self.x_test = xg.reshape(-1)
+        self.t_test = tg.reshape(-1)
+        E_exact, H_exact = self.analytical_solution(self.x_test, self.t_test)
+        self.E_test_exact = E_exact.reshape(self.n_test, self.n_test).numpy()
+
     def build_family(self):
         return build_wavelet_family_2d(
             domain_x=(self.x_lower, self.x_upper),
@@ -182,9 +191,17 @@ class MaxwellHomogeneousProblem(BaseProblem):
             E_pred = torch.mv(W_val, c_E) + bias_E
             H_pred = torch.mv(W_val, c_H) + bias_H
 
+            W_test = model.meta_wavelet.evaluate_basis_2d(
+                self.x_test.to(device), self.t_test.to(device),
+                jx, jt, kx, kt
+            )
+            E_test_pred = torch.mv(W_test, c_E) + bias_E
+
         return {
             'rel_l2_error_E': PINNLoss.relative_l2_error(E_pred.cpu(), self.E_val).item(),
             'rel_l2_error_H': PINNLoss.relative_l2_error(H_pred.cpu(), self.H_val).item(),
             'max_error_E': PINNLoss.max_error(E_pred.cpu(), self.E_val).item(),
-            'max_error_H': PINNLoss.max_error(H_pred.cpu(), self.H_val).item()
+            'max_error_H': PINNLoss.max_error(H_pred.cpu(), self.H_val).item(),
+            'u_pred': E_test_pred.cpu().numpy().reshape(self.n_test, self.n_test),
+            'u_exact': self.E_test_exact
         }

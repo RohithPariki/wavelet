@@ -145,6 +145,8 @@ class MaxwellProblem(BaseProblem):
         xg, yg = torch.meshgrid(x_lin, y_lin, indexing='ij')
         self.x_test = xg.reshape(-1)
         self.y_test = yg.reshape(-1)
+        _, _, hz_test = self.analytical_solution(self.x_test, self.y_test)
+        self.u_test_exact = hz_test.reshape(self.n_test, self.n_test).numpy()
 
     def build_family(self):
         return build_wavelet_family_2d(
@@ -255,6 +257,12 @@ class MaxwellProblem(BaseProblem):
             ey_pred = torch.mv(W_val, c_ey) + bias_ey
             hz_pred = torch.mv(W_val, c_hz) + bias_hz
 
+            W_test = model.meta_wavelet.evaluate_basis_2d(
+                self.x_test.to(device), self.y_test.to(device),
+                jx, jy, kx, ky
+            )
+            hz_test_pred = torch.mv(W_test, c_hz) + bias_hz
+
         return {
             'rel_l2_error_Ex': PINNLoss.relative_l2_error(
                 ex_pred.cpu(), self.ex_val).item(),
@@ -262,4 +270,6 @@ class MaxwellProblem(BaseProblem):
                 ey_pred.cpu(), self.ey_val).item(),
             'rel_l2_error_Hz': PINNLoss.relative_l2_error(
                 hz_pred.cpu(), self.hz_val).item(),
+            'u_pred': hz_test_pred.cpu().numpy().reshape(self.n_test, self.n_test),
+            'u_exact': self.u_test_exact
         }

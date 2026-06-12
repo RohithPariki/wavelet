@@ -218,5 +218,7 @@ class LidDrivenProblem(BaseProblem):
 
         return {
             'rel_l2_error': PINNLoss.relative_l2_error(pred_vel.cpu(), self.vel_ref.cpu()).item(),
-            'max_error': PINNLoss.max_error(pred_vel.cpu(), self.vel_ref.cpu()).item()
+            'max_error': PINNLoss.max_error(pred_vel.cpu(), self.vel_ref.cpu()).item(),
+            'u_pred': pred_vel.cpu().numpy().reshape(self.n_test, self.n_test),
+            'u_exact': self.vel_ref.cpu().numpy().reshape(self.n_test, self.n_test)
         }

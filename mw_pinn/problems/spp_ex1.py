@@ -164,7 +164,16 @@ class SPPEx1Problem(BaseProblem):
 
             u_pred = torch.mv(W_val, c) + bias
 
+            W_test = model.meta_wavelet.evaluate_basis_2d(
+                self.x_test.to(device), self.t_test.to(device),
+                jx, jt, kx, kt
+            )
+            u_test_pred = torch.mv(W_test, c) + bias
+
         return {
             'rel_l2_error': PINNLoss.relative_l2_error(u_pred.cpu(), self.u_val_exact.cpu()).item(),
-            'max_error': PINNLoss.max_error(u_pred.cpu(), self.u_val_exact.cpu()).item()
+            'max_error': PINNLoss.max_error(u_pred.cpu(), self.u_val_exact.cpu()).item(),
+            'u_pred': u_test_pred.cpu().numpy(),
+            'u_exact': self.u_test_exact.cpu().numpy(),
+            'x_coords': self.t_test.cpu().numpy()
         }

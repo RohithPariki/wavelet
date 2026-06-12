@@ -299,6 +299,12 @@ class PoissonProblem(BaseProblem):
             )
             u_val_pred = torch.mv(W_val, c) + bias
 
+            W_test = model.meta_wavelet.evaluate_basis_2d(
+                self.x_test.to(device), self.y_test.to(device),
+                jx, jy, kx, ky
+            )
+            u_test_pred = torch.mv(W_test, c) + bias
+
         rel_l2 = PINNLoss.relative_l2_error(
             u_val_pred.cpu(), self.u_val_exact
         ).item()
@@ -306,4 +312,9 @@ class PoissonProblem(BaseProblem):
             u_val_pred.cpu(), self.u_val_exact
         ).item()
 
-        return {'rel_l2_error': rel_l2, 'max_error': max_err}
+        return {
+            'rel_l2_error': rel_l2, 
+            'max_error': max_err,
+            'u_pred': u_test_pred.cpu().numpy().reshape(self.n_test, self.n_test),
+            'u_exact': self.u_test_exact
+        }
